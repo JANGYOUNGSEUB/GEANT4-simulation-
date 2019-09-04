@@ -1,0 +1,45 @@
+/tracking/verbose 1
+
+/vis/open OGL 600x600-0+0
+/vis/viewer/set/autoRefresh false
+/vis/verbose errors
+/vis/drawVolume
+
+/vis/viewer/set/viewpointVector -1 0 0
+/vis/viewer/set/lightsVector -1 0 0
+/vis/viewer/set/style wireframe
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/lineSegmentsPerCircle 100
+
+/vis/scene/add/trajectories smooth
+/vis/modeling/trajectories/create/drawByCharge
+/vis/modeling/trajectories/drawByCharge-0/default/setDrawStepPts true
+/vis/modeling/trajectories/drawByCharge-0/default/setStepPtsSize 2
+
+/vis/scene/endOfEventAction accumulate
+
+/vis/scene/add/eventID
+/vis/scene/add/frame
+/vis/set/colour
+/vis/set/lineWidth
+
+/vis/geometry/set/visibility World 0 false
+/vis/viewer/set/background black
+/vis/geometry/set/colour LaBr 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour DSSD 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour N2 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour Chamber1 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour Chamber2 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour Chamber3 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour pla 1 0.8 0.8 1 0.3
+#/vis/geometry/set/colour AlEcap 0 0.7 0.7 0.7 1
+#/vis/geometry/set/colour AlCap 0 0.7 0.7 0.7 1
+#/vis/geometry/set/colour PMT 1 0.2 0.2 0.2 1
+#/vis/geometry/set/colour PMTCover 1 0.2 0.2 0.2 1
+
+/vis/viewer/set/style surface
+/vis/viewer/set/hiddenMarker true
+/vis/viewer/set/viewpointThetaPhi 100 160
+/vis/viewer/set/autoRefresh true
+
+/vis/verbose warnings

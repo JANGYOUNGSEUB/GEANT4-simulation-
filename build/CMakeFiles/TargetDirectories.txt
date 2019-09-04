@@ -1,0 +1,8 @@
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/install/strip.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/install/local.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/install.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/list_install_components.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/rebuild_cache.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/edit_cache.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/PROJECT_LaBr.dir
+/home/jang77893/hi/LaBr_bg/build/CMakeFiles/Ladecay.dir

@@ -1,0 +1,200 @@
+#include "DetectorConstruction.hh"
+
+#include "G4RunManager.hh"
+#include "G4NistManager.hh"
+#include "G4Box.hh"
+#include "G4Tubs.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Element.hh"
+#include "G4Material.hh"
+#include "G4VSolid.hh"
+#include "G4RotationMatrix.hh"
+
+#include "stdio.h"
+#include <iostream>
+
+DetectorConstruction::DetectorConstruction()
+: G4VUserDetectorConstruction()
+{
+}
+
+DetectorConstruction::~DetectorConstruction()
+{
+}
+
+G4VPhysicalVolume* DetectorConstruction::Construct()
+{  
+	G4NistManager* nist = G4NistManager::Instance();
+
+
+	// -----------------------------------------------------
+	// World
+
+	G4Material* world_mat = nist -> FindOrBuildMaterial("G4_AIR");
+	G4double world_size = 5000*mm;
+
+	G4Box* solidWorld =    
+		new G4Box("World",                       // its name
+				0.5*world_size,                // half x
+				0.5*world_size,                // half y
+				0.5*world_size);               // half z
+
+	G4LogicalVolume* logicWorld =                         
+		new G4LogicalVolume(solidWorld,          //its solid
+				world_mat,           //its material
+				"World");            //its name
+
+	G4VPhysicalVolume* physWorld = 
+		new G4PVPlacement(0,                     //no rotation
+				G4ThreeVector(),       //at (0,0,0)
+				logicWorld,            //its logical volume
+				"World",               //its name
+				0,                     //its mother  volume
+				false,                 //no boolean operation
+				0,                     //copy number
+				true);                 //overlaps checking
+
+
+	// -----------------------------------------------------
+	// Detector
+	G4double a, z;
+	G4double density;
+	G4int ncomponents, natoms;
+
+	G4Element* La = new G4Element("Lanthanum", "La", z=57.,a=138.90547*g/mole);
+	G4Element* Br = new G4Element("Bromium", "Br", z=35., a=79.904*g/mole);
+	G4Element* Ce = new G4Element("Cerium", "Ce", z=58., a=140.116*g/mole);
+	G4Element* Si = new G4Element("Silicon", "Si", z=14., a=28.085*g/mole);
+	G4Element* N = new G4Element("Nitrogen", "N", z=7., a=14.007*g/mole);
+	G4Element* C = new G4Element("Carbon", "C", z=6., a=12.011*g/mole);
+	G4Element* H = new G4Element("Hydrogen", "H", z=1., a=1.00794*g/mole);
+	G4Element* Al = new G4Element("Aluminum", "Al", z=13., a=26.981*g/mole);
+	
+
+	G4Material* LaBr3 = new G4Material("LaBr3", density = 5.07*g/cm3, ncomponents=2);
+	LaBr3->AddElement(La, natoms=1);
+	LaBr3->AddElement(Br, natoms=3);
+
+	G4Material* labr_mat = new G4Material("LaBr3(Ce)", density = 5.08*g/cm3, ncomponents=2);
+	labr_mat->AddMaterial(LaBr3, 99.5*perCent);
+	labr_mat->AddElement(Ce, 0.5*perCent);
+
+	G4Material* si_mat = new G4Material("Si", density = 2.3290*g/cm3, ncomponents=1);
+	si_mat->AddElement(Si, natoms=1);
+
+	G4Material* n_mat = new G4Material("N", density = 1.2504*g/L, ncomponents=1);
+	n_mat->AddElement(N, natoms=2);
+
+	G4Material* plastic_mat = new G4Material("Plastic", density = 1.032*g/cm3, ncomponents=2);
+	plastic_mat->AddElement(C, natoms=9);
+	plastic_mat->AddElement(H, natoms=10);
+
+	G4Material* alu_mat = new G4Material("Al", density = 2.70*g/cm3, ncomponents=1);
+	alu_mat->AddElement(Al, natoms=1);
+
+
+
+	G4VSolid* labr_crys = new G4Tubs("crys", 0., 0.5*38*mm, 0.5*38*mm, 0., 2*M_PI*rad);
+	G4LogicalVolume* log_det = new G4LogicalVolume(labr_crys, labr_mat, "LaBr");
+
+	G4VSolid* al_encap = new G4Tubs("al_encap", 0.5*38*mm, 0.5*45.4*mm, 0.5*45.*mm, 0., 2*M_PI*rad);
+	G4LogicalVolume* log_al_encap = new G4LogicalVolume(al_encap, alu_mat, "AlEcap");
+
+	G4VSolid* al_cap = new G4Tubs("al_cap", 0.*mm, 0.5*38*mm, 0.5*3.5*mm, 0., 2*M_PI*rad);
+	G4LogicalVolume* log_al_cap = new G4LogicalVolume(al_cap, alu_mat, "AlCap");
+
+	G4VSolid* labr_pmt = new G4Tubs("pmt", 0.5*46*mm, 0.5*47*mm, 0.5*200*mm, 0., 2*M_PI*rad);
+	G4LogicalVolume* log_labr_pmt = new G4LogicalVolume(labr_pmt, alu_mat, "PMT");
+
+	G4VSolid* labr_pmt_cover = new G4Tubs("pmt_cover", 0.*mm, 0.5*46*mm, 0.5*2*mm, 0., 2*M_PI*rad);
+	G4LogicalVolume* log_labr_pmt_cover = new G4LogicalVolume(labr_pmt_cover, alu_mat, "PMTCover");
+
+
+
+
+	G4Box* dssd = new G4Box("DSSD", 0.5*50.*mm, 0.5*50.*mm, 0.5*1.*mm);
+	G4LogicalVolume* log_dssd = new G4LogicalVolume(dssd, si_mat, "DSSD");
+
+	G4Box* plastic = new G4Box("pla", 0.5*50.*mm, 0.5*45.*mm, 0.5*2.*mm);
+	G4LogicalVolume* log_plastic = new G4LogicalVolume(plastic, plastic_mat, "pla");
+
+	G4Box* n2gas = new G4Box("N2", 0.5*90.*mm, 0.5*60.*mm, 0.5*200.*mm);
+	G4LogicalVolume* log_n2gas = new G4LogicalVolume(n2gas, n_mat, "N2");
+
+	G4Box* cham1 = new G4Box("chamber1", 0.5*91.*mm, 0.5*61.*mm, 0.5*0.5*mm);
+	G4LogicalVolume* log_cham1 = new G4LogicalVolume(cham1, alu_mat, "Chamber1");
+
+	G4Box* cham2 = new G4Box("chamber2", 0.5*91.*mm, 0.5*0.5*mm, 0.5*201.*mm);
+	G4LogicalVolume* log_cham2 = new G4LogicalVolume(cham2, alu_mat, "Chamber2");
+
+	G4Box* cham3 = new G4Box("chamber3", 0.5*0.5*mm, 0.5*61.*mm, 0.5*201.*mm);
+	G4LogicalVolume* log_cham3 = new G4LogicalVolume(cham3, alu_mat, "Chamber3");
+
+
+
+	//3-ring type
+	G4double angleLaBr = 90.*degree;
+
+	G4int numCrys = 24;
+	G4int numCrysPart = numCrys/3;
+
+
+	for (G4int i = 0; i < numCrysPart; i++)
+	{
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_det, "LaBr", logicWorld, false, 100+10*i);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_encap, "AlEcap", logicWorld, false, 100+20*i);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 69.25*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_cap, "AlCap", logicWorld, false, 100+20*i);
+
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 212.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt, "PMT", logicWorld, false, 100+30*i);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 113.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0.*mm, 312.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i+3);
+	}
+
+
+	angleLaBr = 65.*degree;
+
+	for (G4int i = 0; i < numCrysPart; i++)
+	{
+
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) +G4ThreeVector(0*mm, 0.*mm, 90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_det, "LaBr", logicWorld, false, 100+10*i+1);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) +G4ThreeVector(0*mm, 0.*mm, -90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_det, "LaBr", logicWorld, false, 100+10*i+2);
+
+
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) +G4ThreeVector(0*mm, 0.*mm, 90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_encap, "AlEcap", logicWorld, false, 100+20*i+1);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) +G4ThreeVector(0*mm, 0.*mm, -90.0*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_encap, "AlEcap", logicWorld, false, 100+20*i+2);
+
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) + G4ThreeVector(0*mm, 0.*mm, 69.25*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_cap, "AlCap", logicWorld, false, 100+20*i+1);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) +G4ThreeVector(0*mm, 0.*mm, -69.25*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_al_cap, "AlCap", logicWorld, false, 100+20*i+2);
+
+
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) + G4ThreeVector(0*mm, 0.*mm, 212.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt, "PMT", logicWorld, false, 100+30*i+1);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) + G4ThreeVector(0*mm, 0.*mm, -212.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt, "PMT", logicWorld, false, 100+30*i+2);
+	
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) + G4ThreeVector(0*mm, 0.*mm, 113.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i+1);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) + G4ThreeVector(0*mm, 0.*mm, -113.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i+2);
+	
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, 20*mm) + G4ThreeVector(0*mm, 0.*mm, 312.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i+4);
+		new G4PVPlacement(new G4RotationMatrix((360/numCrysPart)*i*degree, angleLaBr, 0*degree), G4ThreeVector(0*mm, 0*mm, -20*mm) + G4ThreeVector(0*mm, 0.*mm, -312.5*mm).rotateX(angleLaBr).rotateZ((360/numCrysPart)*i*degree),log_labr_pmt_cover, "PMTCover", logicWorld, false, 100+40*i+5);
+
+
+	}
+
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, -1.5*mm), log_dssd, "DSSD", logicWorld, false, 201);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, 0*mm), log_dssd, "DSSD", logicWorld, false, 202);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, 1.5*mm), log_dssd, "DSSD", logicWorld, false, 203);
+
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, -5*mm), log_plastic, "pla", logicWorld, false, 401);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, 5*mm), log_plastic, "pla", logicWorld, false, 402);
+
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, 0*mm), log_n2gas, "N2", logicWorld, false, 301);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, 100.25*mm), log_cham1, "Chamber1", logicWorld, false, 311);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 0*mm, -100.25*mm), log_cham1, "Chamber1", logicWorld, false, 312);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, 30.25*mm, 0*mm), log_cham2, "Chamber2", logicWorld, false, 313);
+	new G4PVPlacement(0, G4ThreeVector(0*mm, -30.25*mm, 0*mm), log_cham2, "Chamber2", logicWorld, false, 314);
+	new G4PVPlacement(0, G4ThreeVector(45.25*mm, 0*mm, 0*mm), log_cham3, "Chamber3", logicWorld, false, 315);
+	new G4PVPlacement(0, G4ThreeVector(-45.25*mm, 0*mm, 0*mm), log_cham3, "Chamber3", logicWorld, false, 316);
+
+	return physWorld;
+}
